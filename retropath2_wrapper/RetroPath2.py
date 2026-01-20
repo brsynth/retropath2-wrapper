@@ -6,6 +6,7 @@ Created on January 16 2020
 @description: Python wrapper to run RetroPath2.0 KNIME workflow
 
 """
+import csv
 import gzip
 import tarfile
 import zipfile
@@ -49,6 +50,7 @@ def retropath2(
     rules_file: str,
     outdir: str,
     std_hydrogen: str,
+    score_mode: str,
     knime: Knime | None,
     rp2_version: str | None = DEFAULTS['RP2_VERSION'],
     max_steps: int = 3,
@@ -65,6 +67,7 @@ def retropath2(
     logger.debug(f'rules_file: {rules_file}')
     logger.debug(f'outdir: {outdir}')
     logger.debug(f'std_hydrogen: {std_hydrogen}')
+    logger.debug(f'score_mode: {score_mode}')
     logger.debug(f'rp2_version: {rp2_version}')
     logger.debug(f'max_steps: {max_steps}')
     logger.debug(f'topx: {topx}')
@@ -102,6 +105,7 @@ def retropath2(
         'dmax'         : dmax,
         'mwmax_source' : mwmax_source,
         'std_hydrogen' : std_hydrogen,
+        'score_mode'   : score_mode,
     }
     logger.debug('rp2_params: ' + str(rp2_params))
 
@@ -372,8 +376,13 @@ def format_files_for_knime(
     }
     # Because KNIME accepts only '.csv' file extension,
     # files have to be renamed
+    allowed_extensions = {
+        'sink'   : ['.csv'],
+        'source' : ['.csv'],
+        'rules'  : ['.csv', '.tsv'],
+    }
     for key in ['sink', 'source', 'rules']:
-        if os_path.splitext(files[key])[-1] != '.csv':
+        if os_path.splitext(files[key])[-1] not in allowed_extensions[key]:
             new_f = os_path.join(
                 indir,
                 os_path.basename(files[key])+'.csv'
@@ -382,6 +391,136 @@ def format_files_for_knime(
             files[key] = new_f
 
     return files
+
+# Function to return the first lines of a file (as a list)
+def get_first_lines(path: str, n: int = 10) -> list[str]:
+    """
+    Return the first n lines of a file.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+    n : int
+        Number of lines to return. If n <= 0, return all lines.
+
+    Returns
+    -------
+    list[str]
+        The first n lines of the file.
+    """
+    lines = []
+    # --- Gzip compressed single file ---
+    if path.endswith(".gz") and not path.endswith(".tar.gz"):
+        with gzip.open(path, "rt", encoding="utf-8", errors="ignore") as f:
+            for i, line in enumerate(f):
+                if n > 0 and i >= n:
+                    break
+                lines.append(line.rstrip())
+    # --- Tar or Tar.gz archive ---
+    elif path.endswith(".tar") or path.endswith(".tar.gz"):
+        mode = "r:gz" if path.endswith(".gz") else "r:"
+        with tarfile.open(path, mode) as tar:
+            # Pick the first regular file inside
+            for member in tar:
+                if member.isfile():
+                    f = tar.extractfile(member)
+                    if f is None:
+                        continue
+                    for i, line in enumerate(f):
+                        if n > 0 and i >= n:
+                            break
+                        lines.append(line.decode("utf-8", errors="ignore").rstrip())
+                    break  # only first file
+    # --- Zip archive ---
+    elif path.endswith(".zip"):
+        with zipfile.ZipFile(path, "r") as zf:
+            for name in zf.namelist():
+                if name.startswith("_"):
+                    continue
+                with zf.open(name) as f:
+                    for i, line in enumerate(f):
+                        if n > 0 and i >= n:
+                            break
+                        lines.append(line.decode("utf-8", errors="ignore").rstrip())
+                break
+    # --- Plain text ---
+    else:
+        with open(path, "rt", encoding="utf-8", errors="ignore") as f:
+            for i, line in enumerate(f):
+                if n > 0 and i >= n:
+                    break
+                lines.append(line.rstrip())
+    return lines
+
+
+def sniff_score_mode(path: str, default_mode: str = "maximize", logger: Logger = getLogger(__name__)) -> str:  # noqa: E501
+    """
+    Sniff the scoring mode used in reaction rules.
+
+    Parameters
+    ----------
+    path : str
+        Path of the file.
+    default_mode : str
+        Default scoring mode.
+    logger : Logger
+        The logger object.
+
+    Returns
+    -------
+    str
+        The scoring mode: 'minimize' or 'maximize'.
+
+    """
+    lines = get_first_lines(path, n=-1)
+
+    dialect = csv.Sniffer().sniff("\n".join(lines[:10]))
+
+    # Check if header is present
+    has_header = csv.Sniffer().has_header("\n".join(lines[:10]))
+    if not has_header:
+        logger.info(
+            "No header detected in reaction rules."
+            " Returning scoring mode: %s.", default_mode
+        )
+        return default_mode
+
+    # Look for 'score' column
+    lines[0] = lines[0].lower()
+    if "score" not in lines[0]:
+        logger.info(
+            "No 'score' column detected in reaction rules."
+            " Returning scoring mode: %s.", default_mode
+        )
+        return default_mode
+
+    # Inspect all score values
+    scores = []
+    for line in csv.DictReader(lines, dialect=dialect):
+        try:
+            scores.append(float(line["score"]))
+        except ValueError:
+            pass
+    if len(scores) == 0:
+        logger.info(
+            "No valid score values detected in reaction rules."
+            " Returning scoring mode: %s.", default_mode
+        )
+        return default_mode
+    elif any(s > 1 for s in scores):
+        logger.info(
+            "Score > 1 detected, which is historically associated"
+            " with 'minimize' mode. Returning 'minimize'."
+        )
+        return "minimize"
+    else:
+        logger.info(
+            "All scores <= 1 detected, which is historically associated"
+            " with 'maximize' mode. Returning 'maximize'."
+        )
+        return "maximize"
+
 
 def sniff_rules(path: str, logger: Logger = getLogger(__name__)) -> str:
     hydrogen_explicit_patterns = ["[#1"]

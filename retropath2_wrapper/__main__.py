@@ -23,6 +23,7 @@ from brs_utils import (
 from retropath2_wrapper.RetroPath2 import (
     retropath2,
     sniff_rules,
+    sniff_score_mode,
 )
 from retropath2_wrapper.Args import (
     build_args_parser,
@@ -102,12 +103,21 @@ def _cli():
     else:
         std_hydrogen = "H added + Aromatized"
 
+    # Sniff scoring mode
+    if args.score_mode == "auto":
+        score_mode = sniff_score_mode(path=args.rules_file, logger=logger)
+    elif args.score_mode in ["maximize", "minimize"]:
+        score_mode = args.score_mode
+    else:
+        parser.error("--score_mode should be one of 'auto', 'maximize' or 'minimize'.")
+
     r_code, result_files = retropath2(
         sink_file=args.sink_file,
         source_file=args.source_file,
         rules_file=args.rules_file,
         outdir=args.outdir,
         std_hydrogen=std_hydrogen,
+        score_mode=score_mode,
         max_steps=args.max_steps,
         topx=args.topx,
         dmin=args.dmin,
