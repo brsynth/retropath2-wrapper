@@ -15,7 +15,7 @@ __PACKAGE_FOLDER = os_path.dirname(
 )
 DEFAULTS = {
     'MSC_TIMEOUT': 10,  # minutes
-    'RP2_VERSION': 'r20250728',
+    'RP2_VERSION': 'r20260119',
     'KNIME_FOLDER': __PACKAGE_FOLDER,
     "STD_HYDROGEN": "auto",  # How hydrogens are represented in chemical rules
 }
