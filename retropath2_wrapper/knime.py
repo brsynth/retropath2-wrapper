@@ -328,6 +328,7 @@ class Knime(object):
         args += ['-workflow.variable=output.solutionfile,"%s",String' % (self.standardize_path(files['results']),)]
         args += ['-workflow.variable=output.sourceinsinkfile,"%s",String' % (self.standardize_path(files['src-in-sk']),)]
         args += ['-workflow.variable=input.std_mode,"%s",String' % (params["std_hydrogen"],)]
+        args += ['-workflow.variable=input.score_mode,"%s",String' % (params["score_mode"],)]
         if preference and preference.is_init():
             preference.to_file()
             args += ["-preferences=" + self.standardize_path(preference.path)]
