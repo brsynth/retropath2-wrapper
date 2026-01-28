@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.8.0](https://github.com/brsynth/retropath2-wrapper/tree/3.8.0) (2026-01-28)
+
+[Full Changelog](https://github.com/brsynth/retropath2-wrapper/compare/3.7.0...3.8.0)
+
 ## [3.7.0](https://github.com/brsynth/retropath2-wrapper/tree/3.7.0) (2026-01-20)
 
 [Full Changelog](https://github.com/brsynth/retropath2-wrapper/compare/3.6.1...3.7.0)
