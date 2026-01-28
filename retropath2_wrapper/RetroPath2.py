@@ -383,14 +383,35 @@ def format_files_for_knime(
     }
     for key in ['sink', 'source', 'rules']:
         if os_path.splitext(files[key])[-1] not in allowed_extensions[key]:
+
+            # If we are treating the rules file we still need to decide if
+            # we change the extension to either .tsv or .csv. We do this by
+            # sniffing the first lines of the file. If the delimiter is a tab
+            # we set the extension to .tsv, otherwise to .csv.
+            if key == 'rules':
+                lines = get_first_lines(files[key], n=2)
+                dialect = csv.Sniffer().sniff("\n".join(lines))
+                if dialect.delimiter == '\t':
+                    new_ext = '.tsv'
+                else:
+                    new_ext = '.csv'
+                logger.debug(
+                    f"Sniffed rules file delimiter: '{dialect.delimiter}'"
+                    f" -> old extension: {os_path.splitext(files[key])[-1]}"
+                    f" -> new extension: {new_ext}"
+                )
+            else:
+                new_ext = '.csv'
+
             new_f = os_path.join(
                 indir,
-                os_path.basename(files[key])+'.csv'
+                os_path.basename(files[key]) + new_ext
                 )
             copyfile(files[key], new_f)
             files[key] = new_f
 
     return files
+
 
 # Function to return the first lines of a file (as a list)
 def get_first_lines(path: str, n: int = 10) -> list[str]:
