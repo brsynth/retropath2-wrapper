@@ -15,7 +15,7 @@ __PACKAGE_FOLDER = os_path.dirname(
 )
 DEFAULTS = {
     'MSC_TIMEOUT': 10,  # minutes
-    'RP2_VERSION': 'r20260119',
+    'RP2_VERSION': 'r20260128',
     'KNIME_FOLDER': __PACKAGE_FOLDER,
     "STD_HYDROGEN": "auto",  # How hydrogens are represented in chemical rules
     "SCORE_MODE": "auto",  # How to consider priorize rules according to their score
@@ -96,7 +96,7 @@ def _add_arguments(parser):
         '--rp2_version',
         type=str,
         default=DEFAULTS['RP2_VERSION'],
-        choices=['v9', 'r20210127', 'r20220104', "r20220224", "r20250728", "r20260119"],
+        choices=['v9', 'r20210127', 'r20220104', "r20220224", "r20250728", "r20260128"],
         help=f'version of RetroPath2.0 workflow (default: {DEFAULTS["RP2_VERSION"]}).'
     )
 
