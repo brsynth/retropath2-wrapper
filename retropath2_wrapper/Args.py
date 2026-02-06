@@ -15,7 +15,7 @@ __PACKAGE_FOLDER = os_path.dirname(
 )
 DEFAULTS = {
     'MSC_TIMEOUT': 10,  # minutes
-    'RP2_VERSION': 'r20260202',
+    'RP2_VERSION': 'r20260206',
     'KNIME_FOLDER': __PACKAGE_FOLDER,
     "STD_HYDROGEN": "auto",  # How hydrogens are represented in chemical rules
     "SCORE_MODE": "auto",  # How to consider priorize rules according to their score
@@ -96,15 +96,15 @@ def _add_arguments(parser):
         '--rp2_version',
         type=str,
         default=DEFAULTS['RP2_VERSION'],
-        choices=['v9', 'r20210127', 'r20220104', "r20220224", "r20250728", "r20260202"],
+        choices=['v9', 'r20210127', 'r20220104', "r20220224", "r20250728", "r20260206"],
         help=f'version of RetroPath2.0 workflow (default: {DEFAULTS["RP2_VERSION"]}).'
     )
 
-    parser_rp.add_argument('--max_steps'    , type=int, default=3)
-    parser_rp.add_argument('--topx'         , type=int, default=100)
-    parser_rp.add_argument('--dmin'         , type=int, default=0)
-    parser_rp.add_argument('--dmax'         , type=int, default=1000)
-    parser_rp.add_argument('--mwmax_source' , type=int, default=1000)
+    parser_rp.add_argument('--max_steps'   , type=int, default=3)
+    parser_rp.add_argument('--topx'        , type=int, default=100)
+    parser_rp.add_argument('--dmin'        , type=int, default=0)
+    parser_rp.add_argument('--dmax'        , type=int, default=1000)
+    parser_rp.add_argument('--mwmax_source', type=int, default=1000)
     parser_rp.add_argument(
         '--msc_timeout',
         type=int,
